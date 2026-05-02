@@ -21,7 +21,44 @@ env:
   DEVICE_SUBTARGET: 64
 
 jobs:
+  check:
+    runs-on: ubuntu-22.04
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+      version_tag: ${{ steps.check.outputs.version_tag }}
+      latest_hash: ${{ steps.check.outputs.latest_hash }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 检查上游更新并生成版本号
+        id: check
+        run: |
+          LATEST_HASH=$(git ls-remote https://github.com/immortalwrt/immortalwrt.git refs/heads/${{ env.IMMORTALWRT_BRANCH }} | awk '{print $1}')
+          echo "Latest upstream hash: $LATEST_HASH"
+          mkdir -p config
+          touch config/.last_commit
+          LAST_HASH=$(cat config/.last_commit)
+          echo "Last built hash: $LAST_HASH"
+          
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$LATEST_HASH" = "$LAST_HASH" ]; then
+            echo "上游无更新，跳过编译。"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "检测到更新或手动触发，继续编译。"
+            echo "skip=false" >> $GITHUB_OUTPUT
+            if [ "${{ github.event_name }}" = "schedule" ] || [ -z "${{ github.event.inputs.version_tag }}" ]; then
+              VERSION="v24.10-$(date +%Y%m%d)"
+            else
+              VERSION="${{ github.event.inputs.version_tag }}"
+            fi
+            echo "version_tag=$VERSION" >> $GITHUB_OUTPUT
+            echo "latest_hash=$LATEST_HASH" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: check
+    if: needs.check.outputs.skip != 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 360
     permissions:
@@ -128,16 +165,15 @@ jobs:
     - name: 上传固件到 Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ImmortalWrt-x86_64-${{ github.event.inputs.version_tag }}
+        name: ImmortalWrt-x86_64-${{ needs.check.outputs.version_tag }}
         path: openwrt/bin/targets/${{ env.DEVICE_TARGET }}/${{ env.DEVICE_SUBTARGET }}/*
         retention-days: 7
 
-    - name: 生成 Release（可选）
-      if: github.event.inputs.version_tag != ''
+    - name: 生成 Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.event.inputs.version_tag }}
-        name: "ImmortalWrt 24.10 by Kingwong55 - ${{ github.event.inputs.version_tag }}"
+        tag_name: ${{ needs.check.outputs.version_tag }}
+        name: "ImmortalWrt 24.10 by Kingwong55 - ${{ needs.check.outputs.version_tag }}"
         body: |
           ## 🛡️ ImmortalWrt 旁路由固件 by Kingwong55
 
@@ -160,10 +196,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 自动更新在线升级配置
-      if: github.event.inputs.version_tag != ''
       run: |
         cd $GITHUB_WORKSPACE
-        VERSION="${{ github.event.inputs.version_tag }}"
+        VERSION="${{ needs.check.outputs.version_tag }}"
         cat > upgrade/fw.json << EOF
         {
           "x86_64": [
@@ -179,4 +214,8 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add upgrade/fw.json
         git commit -m "🔄 自动更新在线升级配置 → ${VERSION}" || true
+        # 记录本次编译的 hash
+        echo "${{ needs.check.outputs.latest_hash }}" > config/.last_commit
+        git add config/.last_commit
+        git commit -m "chore: update upstream commit hash" || true
         git push || true
