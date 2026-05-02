@@ -1,0 +1,9 @@
+{
+  "x86_64": [
+    {
+      "version": "v2.0.0",
+      "md5": "",
+      "url": "https://github.com/Kingwong55/openwrt-build/releases/download/v2.0.0/immortalwrt-x86-64-generic-squashfs-combined-efi.img.gz"
+    }
+  ]
+}
