@@ -18,8 +18,8 @@
 |------|------|---------|
 | **OpenClash** | 代理 / 科学上网 | 服务 → OpenClash |
 | **AdGuard Home** | DNS 广告拦截 | 服务 → AdGuard Home |
-| **Tailscale** | 远程组网 (VPN) | VPN → Tailscale |
-| **EasyTier** | P2P 组网 | 服务 → EasyTier |
+| **Tailscale** | 远程组网 | VPN → Tailscale |
+| **EasyTier** | P2P 组网 | VPN → EasyTier |
 | **Argon 主题** | 美观 LuCI 界面 | 系统 → Argon 设置 |
 | **ttyd** | Web 终端 | 系统 → 终端 |
 | **open-vm-tools** | ESXi 虚拟机管理 | — |

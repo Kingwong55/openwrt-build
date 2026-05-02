@@ -49,7 +49,7 @@ uci commit luci 2>/dev/null
 # ---- 隐藏底部版本信息 ----
 mkdir -p /www/luci-static/argon/css
 cat >> /www/luci-static/argon/css/cascade.css << 'CSSEOF'
-footer.main-footer { display: none !important; }
+footer { display: none !important; }
 CSSEOF
 
 # ---- 开机自启 Tailscale ----
