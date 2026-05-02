@@ -29,7 +29,7 @@ jobs:
       latest_hash: ${{ steps.check.outputs.latest_hash }}
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 检查上游更新并生成版本号
         id: check
@@ -66,7 +66,7 @@ jobs:
 
     steps:
     - name: 检出代码
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: 清理磁盘空间
       run: |
@@ -109,7 +109,7 @@ jobs:
         ./scripts/feeds install -a
 
     - name: 缓存下载文件
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: openwrt/dl
         key: dl-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ hashFiles('config/immortalwrt.config') }}
@@ -117,7 +117,7 @@ jobs:
           dl-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-
 
     - name: 缓存编译产物 (ccache)
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: openwrt/.ccache
         key: ccache-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ github.sha }}
@@ -163,7 +163,7 @@ jobs:
         ls -lh *.gz 2>/dev/null || echo "未找到 gz 文件"
 
     - name: 上传固件到 Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ImmortalWrt-x86_64-${{ needs.check.outputs.version_tag }}
         path: openwrt/bin/targets/${{ env.DEVICE_TARGET }}/${{ env.DEVICE_SUBTARGET }}/*
