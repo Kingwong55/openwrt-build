@@ -59,6 +59,10 @@ CSSEOF
 # ---- 开机自启 Tailscale ----
 /etc/init.d/tailscale enable 2>/dev/null
 
+# ---- ttyd 直接进入 Shell ----
+uci set ttyd.@ttyd[0].command='/bin/sh'
+uci commit ttyd
+
 echo "✅ 旁路由初始配置完成！"
 echo "   LAN IP:  10.10.1.2"
 echo "   网关:    10.10.1.1"
