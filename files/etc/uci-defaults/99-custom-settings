@@ -46,6 +46,10 @@ uci set luci.main.mediaurlbase='/luci-static/argon' 2>/dev/null
 
 uci commit luci 2>/dev/null
 
+# ---- 根目录直接跳转 LuCI ----
+uci set uhttpd.main.index_page='cgi-bin/luci/'
+uci commit uhttpd
+
 # ---- 隐藏底部版本信息 ----
 mkdir -p /www/luci-static/argon/css
 cat >> /www/luci-static/argon/css/cascade.css << 'CSSEOF'
