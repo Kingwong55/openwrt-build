@@ -7,9 +7,9 @@
 # ---- 基础网络配置（旁路由模式） ----
 
 # 设置 LAN IP
-uci set network.lan.ipaddr='10.10.10.2'
+uci set network.lan.ipaddr='10.10.1.2'
 uci set network.lan.netmask='255.255.255.0'
-uci set network.lan.gateway='10.10.10.1'
+uci set network.lan.gateway='10.10.1.1'
 uci set network.lan.dns='127.0.0.1'
 uci set network.lan.proto='static'
 
@@ -46,9 +46,18 @@ uci set luci.main.mediaurlbase='/luci-static/argon' 2>/dev/null
 
 uci commit luci 2>/dev/null
 
+# ---- 隐藏底部版本信息 ----
+mkdir -p /www/luci-static/argon/css
+cat >> /www/luci-static/argon/css/cascade.css << 'CSSEOF'
+footer.main-footer { display: none !important; }
+CSSEOF
+
+# ---- 开机自启 Tailscale ----
+/etc/init.d/tailscale enable 2>/dev/null
+
 echo "✅ 旁路由初始配置完成！"
-echo "   LAN IP:  10.10.10.2"
-echo "   网关:    10.10.10.1"
+echo "   LAN IP:  10.10.1.2"
+echo "   网关:    10.10.1.1"
 echo "   DNS:     127.0.0.1 (AdGuard Home)"
 echo "   DHCP:    已关闭"
 
