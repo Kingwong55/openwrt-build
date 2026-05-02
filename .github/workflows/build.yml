@@ -1,0 +1,134 @@
+# ============================================
+# ImmortalWrt x86_64 旁路由固件 - 云端编译
+# 使用 GitHub Actions 免费 x86_64 服务器
+# ============================================
+name: Build ImmortalWrt Firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: '固件版本标签（例如：v1.0.0）'
+        required: false
+        default: 'v1.0.0'
+
+env:
+  IMMORTALWRT_BRANCH: openwrt-24.10
+  DEVICE_TARGET: x86
+  DEVICE_SUBTARGET: 64
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 清理磁盘空间
+      run: |
+        echo "清理不需要的预装软件，释放磁盘空间..."
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo apt-get -qq autoremove --purge
+        sudo apt-get -qq clean
+        df -hT
+
+    - name: 安装编译依赖
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ack antlr3 asciidoc autoconf automake \
+          autopoint binutils bison build-essential bzip2 ccache clang \
+          cmake cpio curl device-tree-compiler ecj fastjar file flex \
+          g++ gawk gcc gcc-multilib g++-multilib gettext git gnutls-dev \
+          gperf haveged help2man intltool java-propose-classpath jq \
+          libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev \
+          libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev \
+          libpython3-dev libreadline-dev libssl-dev libtool llvm lrzsz \
+          mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf \
+          python3 python3-distutils python3-docutils python3-pip \
+          python3-pyelftools python3-setuptools qemu-utils quilt re2c \
+          rename rsync scons squashfs-tools subversion swig texinfo \
+          uglifyjs unzip vim wget xmlto xxd zlib1g-dev zstd
+
+    - name: 克隆 ImmortalWrt 源码
+      run: |
+        git clone --depth=1 -b $IMMORTALWRT_BRANCH \
+          https://github.com/immortalwrt/immortalwrt.git openwrt
+        cd openwrt
+        # 添加自定义 feeds
+        cat $GITHUB_WORKSPACE/config/custom-feeds.conf >> feeds.conf.default
+
+    - name: 更新并安装 Feeds
+      run: |
+        cd openwrt
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: 应用编译配置
+      run: |
+        cd openwrt
+        cp $GITHUB_WORKSPACE/config/immortalwrt.config .config
+        make defconfig
+
+    - name: 注入自定义文件
+      run: |
+        cd openwrt
+        mkdir -p files
+        cp -r $GITHUB_WORKSPACE/files/* files/ 2>/dev/null || true
+
+    - name: 下载编译所需源码包
+      run: |
+        cd openwrt
+        make download -j$(nproc)
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+
+    - name: 多核编译固件
+      run: |
+        cd openwrt
+        echo "开始编译，使用 $(nproc) 核心..."
+        make -j$(nproc) || make -j1 V=s
+
+    - name: 整理固件文件
+      run: |
+        cd openwrt/bin/targets/$DEVICE_TARGET/$DEVICE_SUBTARGET
+        # 删除不需要的文件，只保留固件
+        rm -rf packages
+        echo "=== 编译产物 ==="
+        ls -lh *.img* 2>/dev/null || echo "未找到 img 文件"
+        ls -lh *.gz 2>/dev/null || echo "未找到 gz 文件"
+
+    - name: 上传固件到 Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ImmortalWrt-x86_64-${{ github.event.inputs.version_tag }}
+        path: openwrt/bin/targets/${{ env.DEVICE_TARGET }}/${{ env.DEVICE_SUBTARGET }}/*
+        retention-days: 7
+
+    - name: 生成 Release（可选）
+      if: github.event.inputs.version_tag != ''
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.event.inputs.version_tag }}
+        name: "ImmortalWrt 24.10 by Kingwong55 - ${{ github.event.inputs.version_tag }}"
+        body: |
+          ## 🛡️ ImmortalWrt 旁路由固件 by Kingwong55
+
+          ### 包含插件
+          - OpenClash（代理管理）
+          - AdGuard Home（DNS 去广告）
+          - Argon 主题（美化）
+          - ttyd（Web 终端）
+          - Tailscale（远程组网）
+          - EasyTier（P2P 组网）
+
+          ### 固件信息
+          - 架构：x86_64 EFI
+          - 基于：ImmortalWrt 24.10
+          - 默认 IP：10.10.10.2
+          - 主机名：Kingwong55
+        files: openwrt/bin/targets/${{ env.DEVICE_TARGET }}/${{ env.DEVICE_SUBTARGET }}/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

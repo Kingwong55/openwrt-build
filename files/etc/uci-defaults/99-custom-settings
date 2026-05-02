@@ -1,0 +1,55 @@
+#!/bin/sh
+# ============================================
+# OpenWrt 首次启动自动配置脚本
+# 此脚本在固件首次启动时自动执行
+# ============================================
+
+# ---- 基础网络配置（旁路由模式） ----
+
+# 设置 LAN IP
+uci set network.lan.ipaddr='10.10.10.2'
+uci set network.lan.netmask='255.255.255.0'
+uci set network.lan.gateway='10.10.10.1'
+uci set network.lan.dns='127.0.0.1'
+uci set network.lan.proto='static'
+
+# 关闭 DHCP（由主路由负责）
+uci set dhcp.lan.ignore='1'
+
+# 关闭 IPv6 DHCP（旁路由不需要）
+uci set dhcp.lan.dhcpv6='disabled'
+uci set dhcp.lan.ra='disabled'
+
+uci commit network
+uci commit dhcp
+
+# ---- 防火墙配置 ----
+
+# 设置宽松的防火墙策略（旁路由）
+uci set firewall.@zone[0].input='ACCEPT'
+uci set firewall.@zone[0].output='ACCEPT'
+uci set firewall.@zone[0].forward='ACCEPT'
+
+uci commit firewall
+
+# ---- 系统配置 ----
+
+# 设置主机名
+uci set system.@system[0].hostname='Kingwong55'
+uci set system.@system[0].timezone='CST-8'
+uci set system.@system[0].zonename='Asia/Shanghai'
+
+uci commit system
+
+# ---- 设置默认主题为 Argon ----
+uci set luci.main.mediaurlbase='/luci-static/argon' 2>/dev/null
+
+uci commit luci 2>/dev/null
+
+echo "✅ 旁路由初始配置完成！"
+echo "   LAN IP:  10.10.10.2"
+echo "   网关:    10.10.10.1"
+echo "   DNS:     127.0.0.1 (AdGuard Home)"
+echo "   DHCP:    已关闭"
+
+exit 0
