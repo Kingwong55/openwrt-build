@@ -66,6 +66,22 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
+    - name: 缓存下载文件
+      uses: actions/cache@v4
+      with:
+        path: openwrt/dl
+        key: dl-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ hashFiles('config/immortalwrt.config') }}
+        restore-keys: |
+          dl-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-
+
+    - name: 缓存编译产物 (ccache)
+      uses: actions/cache@v4
+      with:
+        path: openwrt/.ccache
+        key: ccache-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ github.sha }}
+        restore-keys: |
+          ccache-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-
+
     - name: 应用编译配置
       run: |
         cd openwrt
@@ -88,8 +104,12 @@ jobs:
     - name: 多核编译固件
       run: |
         cd openwrt
-        echo "开始编译，使用 $(nproc) 核心..."
+        export CCACHE_DIR=$(pwd)/.ccache
+        export PATH="/usr/lib/ccache:$PATH"
+        echo "开始编译，使用 $(nproc) 核心，ccache 已启用..."
         make -j$(nproc) || make -j1 V=s
+        echo "ccache 统计："
+        ccache -s 2>/dev/null || true
 
     - name: 整理固件文件
       run: |
