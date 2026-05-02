@@ -10,7 +10,7 @@
 uci set network.lan.ipaddr='10.10.1.2'
 uci set network.lan.netmask='255.255.255.0'
 uci set network.lan.gateway='10.10.1.1'
-uci set network.lan.dns='127.0.0.1'
+uci set network.lan.dns='223.5.5.5'
 uci set network.lan.proto='static'
 
 # 关闭 DHCP（由主路由负责）
