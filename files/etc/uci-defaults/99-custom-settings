@@ -63,10 +63,63 @@ CSSEOF
 uci set ttyd.@ttyd[0].command='/bin/sh'
 uci commit ttyd
 
+# ---- 禁用 dnsmasq（旁路由不需要，避免端口冲突） ----
+/etc/init.d/dnsmasq stop 2>/dev/null
+/etc/init.d/dnsmasq disable 2>/dev/null
+
+# ---- AdGuard Home 初始化（终极串联：监听 53，上游指 OpenClash 7874） ----
+mkdir -p /etc/AdGuardHome
+if [ ! -f /etc/AdGuardHome/AdGuardHome.yaml ]; then
+cat > /etc/AdGuardHome/AdGuardHome.yaml << 'ADGEOF'
+http:
+  pprof:
+    port: 6060
+    enabled: false
+  address: 0.0.0.0:3000
+  session_ttl: 720h
+users: []
+dns:
+  bind_hosts:
+    - 0.0.0.0
+  port: 53
+  upstream_dns:
+    - 127.0.0.1:7874
+  bootstrap_dns:
+    - 223.5.5.5
+    - 119.29.29.29
+  protection_enabled: true
+  blocking_mode: default
+  cache_size: 4194304
+  cache_ttl_min: 300
+filters:
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+    name: AdGuard DNS filter
+    id: 1
+  - enabled: true
+    url: https://anti-ad.net/easylist.txt
+    name: anti-ad
+    id: 1777743596
+  - enabled: true
+    url: https://gcore.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblockdns.txt
+    name: 217heidai 广告规则
+    id: 1777743597
+whitelist_filters: []
+user_rules: []
+schema_version: 28
+ADGEOF
+fi
+
+# 添加开机自启到 rc.local
+if ! grep -q "AdGuardHome" /etc/rc.local; then
+    sed -i "/exit 0/i nohup /usr/bin/AdGuardHome --no-check-update -w /etc/AdGuardHome > /dev/null 2>&1 &" /etc/rc.local
+fi
+
 echo "✅ 旁路由初始配置完成！"
 echo "   LAN IP:  10.10.1.2"
 echo "   网关:    10.10.1.1"
-echo "   DNS:     127.0.0.1 (AdGuard Home)"
+echo "   DNS:     OpenClash → AdGuard Home(5353) → 223.5.5.5"
 echo "   DHCP:    已关闭"
+echo "   dnsmasq: 已禁用"
 
 exit 0
