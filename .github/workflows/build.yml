@@ -141,16 +141,39 @@ jobs:
           ### 包含插件
           - OpenClash（代理管理）
           - AdGuard Home（DNS 去广告）
-          - Argon 主题（美化）
-          - ttyd（Web 终端）
           - Tailscale（远程组网）
           - EasyTier（P2P 组网）
+          - 在线固件升级
+          - Argon 主题（美化）
+          - ttyd（Web 终端）
 
           ### 固件信息
           - 架构：x86_64 EFI
           - 基于：ImmortalWrt 24.10
-          - 默认 IP：10.10.10.2
+          - 默认 IP：10.10.1.2
           - 主机名：Kingwong55
         files: openwrt/bin/targets/${{ env.DEVICE_TARGET }}/${{ env.DEVICE_SUBTARGET }}/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 自动更新在线升级配置
+      if: github.event.inputs.version_tag != ''
+      run: |
+        cd $GITHUB_WORKSPACE
+        VERSION="${{ github.event.inputs.version_tag }}"
+        cat > upgrade/fw.json << EOF
+        {
+          "x86_64": [
+            {
+              "version": "${VERSION}",
+              "md5": "",
+              "url": "https://github.com/Kingwong55/openwrt-build/releases/download/${VERSION}/immortalwrt-x86-64-generic-squashfs-combined-efi.img.gz"
+            }
+          ]
+        }
+        EOF
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add upgrade/fw.json
+        git commit -m "🔄 自动更新在线升级配置 → ${VERSION}" || true
+        git push || true
