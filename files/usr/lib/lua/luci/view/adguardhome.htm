@@ -1,185 +1,239 @@
 <%+header%>
 <style>
-.adg-panel {
-    max-width: 680px;
-    margin: 20px auto;
-    padding: 30px;
-    background: var(--cbi-section-bg, #fff);
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+.adg-container {
+    max-width: 100%;
 }
-.adg-header {
+.adg-card {
+    background: var(--main-bg-color, #fff);
+    border-radius: var(--border-radius, 8px);
+    box-shadow: var(--main-shadow, 0 1px 4px rgba(0,0,0,.1));
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.adg-card-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    gap: 14px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #5e72e4, #825ee4);
+    color: #fff;
 }
-.adg-logo {
-    width: 48px; height: 48px;
-    background: linear-gradient(135deg, #68bc71, #2c8c3b);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 22px; font-weight: bold;
+.adg-card-header svg {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
 }
-.adg-title { font-size: 22px; font-weight: 700; }
-.adg-subtitle { font-size: 13px; color: #888; margin-top: 2px; }
-
-.adg-status-row {
+.adg-card-header-text h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+}
+.adg-card-header-text span {
+    font-size: 13px;
+    opacity: 0.85;
+}
+.adg-card-body {
+    padding: 0;
+}
+.adg-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color-light, #f0f0f0);
+    transition: background 0.15s;
 }
-.adg-status-label { font-size: 15px; font-weight: 500; }
-.adg-status-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+.adg-row:last-child {
+    border-bottom: none;
 }
-.adg-status-badge.running { background: #dcfce7; color: #16a34a; }
-.adg-status-badge.stopped { background: #fee2e2; color: #dc2626; }
+.adg-row:hover {
+    background: var(--hover-bg, rgba(94,114,228,0.04));
+}
+.adg-row-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--main-text-color, #333);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.adg-row-label .adg-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+.adg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.adg-badge-ok {
+    background: rgba(45,206,137,0.12);
+    color: #2dce89;
+}
+.adg-badge-err {
+    background: rgba(245,54,92,0.12);
+    color: #f5365c;
+}
 
-/* Toggle Switch */
-.adg-switch {
-    position: relative; width: 52px; height: 28px;
-    background: #ccc; border-radius: 14px; cursor: pointer;
-    transition: background 0.3s;
+/* Argon-style toggle */
+.adg-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background: #d1d5db;
+    cursor: pointer;
+    transition: background 0.25s;
+    flex-shrink: 0;
 }
-.adg-switch.on { background: #68bc71; }
-.adg-switch .adg-knob {
-    position: absolute; top: 3px; left: 3px;
-    width: 22px; height: 22px; background: #fff;
-    border-radius: 50%; transition: left 0.3s;
+.adg-toggle.active {
+    background: #5e72e4;
+}
+.adg-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.25s;
 }
-.adg-switch.on .adg-knob { left: 27px; }
-.adg-switch.loading { opacity: 0.5; pointer-events: none; }
+.adg-toggle.active::after {
+    transform: translateX(20px);
+}
+.adg-toggle.busy {
+    opacity: 0.5;
+    pointer-events: none;
+}
 
-.adg-actions { margin-top: 24px; display: flex; gap: 12px; }
+/* Action buttons */
+.adg-actions {
+    padding: 16px 24px;
+    display: flex;
+    gap: 10px;
+}
 .adg-btn {
-    flex: 1; padding: 12px 0; text-align: center;
-    border-radius: 8px; font-size: 15px; font-weight: 600;
-    text-decoration: none; cursor: pointer; border: none;
-    transition: transform 0.15s, box-shadow 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border-radius: var(--border-radius, 6px);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: box-shadow 0.2s, transform 0.15s;
+    white-space: nowrap;
 }
-.adg-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.adg-btn:active {
+    transform: scale(0.97);
+}
 .adg-btn-primary {
-    background: linear-gradient(135deg, #68bc71, #2c8c3b);
+    background: linear-gradient(135deg, #5e72e4, #825ee4);
     color: #fff;
+    box-shadow: 0 2px 6px rgba(94,114,228,0.35);
 }
-.adg-btn-outline {
-    background: transparent; color: #68bc71;
-    border: 2px solid #68bc71;
+.adg-btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(94,114,228,0.5);
+    color: #fff;
+    text-decoration: none;
+}
+.adg-btn-secondary {
+    background: var(--main-bg-color, #fff);
+    color: #5e72e4;
+    border: 1px solid #5e72e4;
+}
+.adg-btn-secondary:hover {
+    background: rgba(94,114,228,0.06);
+    text-decoration: none;
+    color: #5e72e4;
 }
 </style>
 
-<div class="adg-panel">
-    <div class="adg-header">
-        <div class="adg-logo">AG</div>
-        <div>
-            <div class="adg-title">AdGuard Home</div>
-            <div class="adg-subtitle">DNS 广告过滤 & 安全防护</div>
+<div class="adg-container">
+    <div class="adg-card">
+        <div class="adg-card-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <div class="adg-card-header-text">
+                <h3>AdGuard Home</h3>
+                <span>DNS 广告过滤 & 安全防护</span>
+            </div>
         </div>
-    </div>
-
-    <div class="adg-status-row">
-        <span class="adg-status-label">运行状态</span>
-        <span id="adg-running-badge" class="adg-status-badge stopped">⏳ 检测中...</span>
-    </div>
-
-    <div class="adg-status-row">
-        <span class="adg-status-label">服务开关</span>
-        <div id="adg-toggle" class="adg-switch loading" onclick="toggleService()">
-            <div class="adg-knob"></div>
+        <div class="adg-card-body">
+            <div class="adg-row">
+                <span class="adg-row-label"><span class="adg-icon">●</span> 运行状态</span>
+                <span id="adg-status" class="adg-badge adg-badge-err">检测中…</span>
+            </div>
+            <div class="adg-row">
+                <span class="adg-row-label"><span class="adg-icon">⏻</span> 服务开关</span>
+                <div id="adg-svc" class="adg-toggle busy" onclick="doToggle('service')"></div>
+            </div>
+            <div class="adg-row">
+                <span class="adg-row-label"><span class="adg-icon">↻</span> 开机自启</span>
+                <div id="adg-boot" class="adg-toggle busy" onclick="doToggle('boot')"></div>
+            </div>
+            <div class="adg-actions">
+                <a id="adg-link" href="#" target="_blank" class="adg-btn adg-btn-primary">打开管理面板</a>
+                <button class="adg-btn adg-btn-secondary" onclick="poll()">刷新状态</button>
+            </div>
         </div>
-    </div>
-
-    <div class="adg-status-row">
-        <span class="adg-status-label">开机自启</span>
-        <div id="adg-autostart" class="adg-switch loading" onclick="toggleAutostart()">
-            <div class="adg-knob"></div>
-        </div>
-    </div>
-
-    <div class="adg-actions">
-        <a id="adg-dashboard-btn" href="#" target="_blank" class="adg-btn adg-btn-primary">
-            🛡️ 打开管理面板
-        </a>
-        <button class="adg-btn adg-btn-outline" onclick="refreshStatus()">
-            🔄 刷新状态
-        </button>
     </div>
 </div>
 
 <script>
-(function() {
-    var host = window.location.hostname;
-    document.getElementById('adg-dashboard-btn').href = 'http://' + host + ':3000';
-    refreshStatus();
+(function(){
+    document.getElementById('adg-link').href = 'http://' + location.hostname + ':3000';
+    poll();
 })();
 
-function refreshStatus() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/adguardhome/status")%>', true);
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            var data = JSON.parse(xhr.responseText);
-            updateUI(data);
-        }
+function poll() {
+    var x = new XMLHttpRequest();
+    x.open('GET', '<%=luci.dispatcher.build_url("admin/services/adguardhome/status")%>');
+    x.onload = function() {
+        if (x.status === 200) render(JSON.parse(x.responseText));
     };
-    xhr.send();
+    x.send();
 }
 
-function updateUI(data) {
-    var badge = document.getElementById('adg-running-badge');
-    var toggle = document.getElementById('adg-toggle');
-    var autostart = document.getElementById('adg-autostart');
+function render(d) {
+    var s = document.getElementById('adg-status');
+    var svc = document.getElementById('adg-svc');
+    var boot = document.getElementById('adg-boot');
+    s.textContent = d.running ? '● 运行中' : '○ 已停止';
+    s.className = 'adg-badge ' + (d.running ? 'adg-badge-ok' : 'adg-badge-err');
+    svc.className = 'adg-toggle' + (d.running ? ' active' : '');
+    boot.className = 'adg-toggle' + (d.enabled ? ' active' : '');
+}
 
-    if (data.running) {
-        badge.className = 'adg-status-badge running';
-        badge.textContent = '● 运行中';
-        toggle.className = 'adg-switch on';
+function doToggle(type) {
+    var el, action;
+    if (type === 'service') {
+        el = document.getElementById('adg-svc');
+        action = el.classList.contains('active') ? 'stop' : 'start';
     } else {
-        badge.className = 'adg-status-badge stopped';
-        badge.textContent = '○ 已停止';
-        toggle.className = 'adg-switch';
+        el = document.getElementById('adg-boot');
+        action = el.classList.contains('active') ? 'disable' : 'enable';
     }
-
-    if (data.enabled) {
-        autostart.className = 'adg-switch on';
-    } else {
-        autostart.className = 'adg-switch';
-    }
-}
-
-function toggleService() {
-    var toggle = document.getElementById('adg-toggle');
-    var isOn = toggle.classList.contains('on');
-    toggle.classList.add('loading');
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '<%=luci.dispatcher.build_url("admin/services/adguardhome/toggle")%>', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onload = function() {
-        setTimeout(refreshStatus, 2000);
-    };
-    xhr.send('action=' + (isOn ? 'stop' : 'start') + '&token=<%=token%>');
-}
-
-function toggleAutostart() {
-    var autostart = document.getElementById('adg-autostart');
-    var isOn = autostart.classList.contains('on');
-    autostart.classList.add('loading');
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '<%=luci.dispatcher.build_url("admin/services/adguardhome/toggle")%>', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.onload = function() {
-        setTimeout(refreshStatus, 1000);
-    };
-    xhr.send('action=' + (isOn ? 'disable' : 'enable') + '&token=<%=token%>');
+    el.classList.add('busy');
+    var x = new XMLHttpRequest();
+    x.open('POST', '<%=luci.dispatcher.build_url("admin/services/adguardhome/toggle")%>');
+    x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    x.onload = function() { setTimeout(poll, type === 'service' ? 2000 : 800); };
+    x.send('action=' + action + '&token=<%=token%>');
 }
 </script>
 <%+footer%>
