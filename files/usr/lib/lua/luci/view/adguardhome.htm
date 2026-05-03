@@ -1,0 +1,8 @@
+<%+header%>
+<div class="cbi-map">
+<h2>AdGuard Home</h2>
+<p>AdGuard Home 管理面板运行在独立端口，点击下方按钮进入：</p>
+<br/>
+<a href="http://<%= luci.http.getenv("HTTP_HOST"):gsub(":%d+$","") %>:3000" target="_blank" class="btn cbi-button cbi-button-apply" style="font-size:16px;padding:10px 30px;">打开 AdGuard Home 管理面板</a>
+</div>
+<%+footer%>
