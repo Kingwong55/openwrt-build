@@ -10,8 +10,8 @@ function action_status()
     local http = require "luci.http"
     local sys = require "luci.sys"
 
-    local running = sys.call("pgrep -x AdGuardHome >/dev/null 2>&1") == 0
-    local enabled = sys.call("ls /etc/rc.d/S99adguardhome >/dev/null 2>&1") == 0
+    local running = sys.call("pidof AdGuardHome >/dev/null 2>&1") == 0
+    local enabled = sys.call("[ -f /etc/rc.d/S99adguardhome ]") == 0
 
     http.prepare_content("application/json")
     http.write_json({
