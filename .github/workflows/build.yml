@@ -48,7 +48,7 @@ jobs:
             echo "检测到更新或手动触发，继续编译。"
             echo "skip=false" >> $GITHUB_OUTPUT
             if [ "${{ github.event_name }}" = "schedule" ] || [ -z "${{ github.event.inputs.version_tag }}" ]; then
-              VERSION="v24.10-$(date +%Y%m%d)"
+              VERSION="v24.10-$(date +%Y%m%d-%H%M)"
             else
               VERSION="${{ github.event.inputs.version_tag }}"
             fi
