@@ -195,27 +195,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 自动更新在线升级配置
+    - name: 记录编译版本基线
       run: |
         cd $GITHUB_WORKSPACE
-        VERSION="${{ needs.check.outputs.version_tag }}"
-        cat > upgrade/fw.json << EOF
-        {
-          "x86_64": [
-            {
-              "version": "${VERSION}",
-              "md5": "",
-              "url": "https://github.com/Kingwong55/openwrt-build/releases/download/${VERSION}/immortalwrt-x86-64-generic-squashfs-combined-efi.img.gz"
-            }
-          ]
-        }
-        EOF
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add upgrade/fw.json
-        git commit -m "🔄 自动更新在线升级配置 → ${VERSION}" || true
-        # 记录本次编译的 hash
+        # 记录本次编译的上游 hash（用于定时任务判断是否有更新）
+        mkdir -p config
         echo "${{ needs.check.outputs.latest_hash }}" > config/.last_commit
         git add config/.last_commit
-        git commit -m "chore: update upstream commit hash" || true
+        git commit -m "chore: update upstream commit hash → ${{ needs.check.outputs.version_tag }}" || true
         git push || true

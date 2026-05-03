@@ -143,11 +143,33 @@ if ! grep -q "AdGuardHome" /etc/rc.local; then
     sed -i "/exit 0/i nohup /usr/bin/AdGuardHome --no-check-update -w /etc/AdGuardHome > /dev/null 2>&1 &" /etc/rc.local
 fi
 
+# ---- 首次启动自动安装 Tailscale（源码编译有 Go 兼容问题，改用 opkg 在线安装） ----
+cat > /etc/uci-defaults/98-install-tailscale << 'TSEOF'
+#!/bin/sh
+# 等待网络就绪后自动安装 Tailscale
+MAX_RETRY=30
+for i in $(seq 1 $MAX_RETRY); do
+    ping -c 1 -W 3 mirrors.vsean.net >/dev/null 2>&1 && break
+    sleep 5
+done
+
+opkg update 2>/dev/null
+opkg install tailscale 2>/dev/null
+
+# 启用 Tailscale 服务
+/etc/init.d/tailscale enable 2>/dev/null
+/etc/init.d/tailscale start 2>/dev/null
+
+echo "✅ Tailscale 自动安装完成"
+TSEOF
+chmod +x /etc/uci-defaults/98-install-tailscale
+
 echo "✅ 旁路由初始配置完成！"
 echo "   LAN IP:  10.10.1.2"
 echo "   网关:    10.10.1.1"
-echo "   DNS:     OpenClash → AdGuard Home(5353) → 223.5.5.5"
+echo "   DNS:     设备 → AdGuard Home(53) → OpenClash(7874)"
 echo "   DHCP:    已关闭"
 echo "   dnsmasq: 已禁用"
+echo "   Tailscale: 首次开机后自动安装"
 
 exit 0
