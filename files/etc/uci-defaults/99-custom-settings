@@ -156,11 +156,22 @@ done
 opkg update 2>/dev/null
 opkg install tailscale 2>/dev/null
 
+# 安装 Tailscale LuCI 管理界面（从 GitHub 下载预编译 ipk）
+cd /tmp
+wget -q https://github.com/asvow/luci-app-tailscale/releases/download/v1.2.6/luci-app-tailscale_1.2.6_all.ipk 2>/dev/null
+wget -q https://github.com/asvow/luci-app-tailscale/releases/download/v1.2.6/luci-i18n-tailscale-zh-cn_250509.33792_all.ipk 2>/dev/null
+opkg install --force-overwrite /tmp/luci-app-tailscale_1.2.6_all.ipk 2>/dev/null
+opkg install --force-overwrite --force-depends /tmp/luci-i18n-tailscale-zh-cn_250509.33792_all.ipk 2>/dev/null
+rm -f /tmp/luci-app-tailscale*.ipk /tmp/luci-i18n-tailscale*.ipk
+
 # 启用 Tailscale 服务
 /etc/init.d/tailscale enable 2>/dev/null
 /etc/init.d/tailscale start 2>/dev/null
 
-echo "✅ Tailscale 自动安装完成"
+# 清理 LuCI 缓存使菜单生效
+rm -rf /tmp/luci-*cache*
+
+echo "✅ Tailscale + LuCI 界面自动安装完成"
 TSEOF
 chmod +x /etc/uci-defaults/98-install-tailscale
 
