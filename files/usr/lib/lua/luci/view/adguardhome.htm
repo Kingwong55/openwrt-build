@@ -1,8 +1,185 @@
 <%+header%>
-<div class="cbi-map">
-<h2>AdGuard Home</h2>
-<p>AdGuard Home 管理面板运行在独立端口，点击下方按钮进入：</p>
-<br/>
-<a href="http://<%= luci.http.getenv("HTTP_HOST"):gsub(":%d+$","") %>:3000" target="_blank" class="btn cbi-button cbi-button-apply" style="font-size:16px;padding:10px 30px;">打开 AdGuard Home 管理面板</a>
+<style>
+.adg-panel {
+    max-width: 680px;
+    margin: 20px auto;
+    padding: 30px;
+    background: var(--cbi-section-bg, #fff);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.adg-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+.adg-logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, #68bc71, #2c8c3b);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 22px; font-weight: bold;
+}
+.adg-title { font-size: 22px; font-weight: 700; }
+.adg-subtitle { font-size: 13px; color: #888; margin-top: 2px; }
+
+.adg-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+}
+.adg-status-label { font-size: 15px; font-weight: 500; }
+.adg-status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+}
+.adg-status-badge.running { background: #dcfce7; color: #16a34a; }
+.adg-status-badge.stopped { background: #fee2e2; color: #dc2626; }
+
+/* Toggle Switch */
+.adg-switch {
+    position: relative; width: 52px; height: 28px;
+    background: #ccc; border-radius: 14px; cursor: pointer;
+    transition: background 0.3s;
+}
+.adg-switch.on { background: #68bc71; }
+.adg-switch .adg-knob {
+    position: absolute; top: 3px; left: 3px;
+    width: 22px; height: 22px; background: #fff;
+    border-radius: 50%; transition: left 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.adg-switch.on .adg-knob { left: 27px; }
+.adg-switch.loading { opacity: 0.5; pointer-events: none; }
+
+.adg-actions { margin-top: 24px; display: flex; gap: 12px; }
+.adg-btn {
+    flex: 1; padding: 12px 0; text-align: center;
+    border-radius: 8px; font-size: 15px; font-weight: 600;
+    text-decoration: none; cursor: pointer; border: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.adg-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.adg-btn-primary {
+    background: linear-gradient(135deg, #68bc71, #2c8c3b);
+    color: #fff;
+}
+.adg-btn-outline {
+    background: transparent; color: #68bc71;
+    border: 2px solid #68bc71;
+}
+</style>
+
+<div class="adg-panel">
+    <div class="adg-header">
+        <div class="adg-logo">AG</div>
+        <div>
+            <div class="adg-title">AdGuard Home</div>
+            <div class="adg-subtitle">DNS 广告过滤 & 安全防护</div>
+        </div>
+    </div>
+
+    <div class="adg-status-row">
+        <span class="adg-status-label">运行状态</span>
+        <span id="adg-running-badge" class="adg-status-badge stopped">⏳ 检测中...</span>
+    </div>
+
+    <div class="adg-status-row">
+        <span class="adg-status-label">服务开关</span>
+        <div id="adg-toggle" class="adg-switch loading" onclick="toggleService()">
+            <div class="adg-knob"></div>
+        </div>
+    </div>
+
+    <div class="adg-status-row">
+        <span class="adg-status-label">开机自启</span>
+        <div id="adg-autostart" class="adg-switch loading" onclick="toggleAutostart()">
+            <div class="adg-knob"></div>
+        </div>
+    </div>
+
+    <div class="adg-actions">
+        <a id="adg-dashboard-btn" href="#" target="_blank" class="adg-btn adg-btn-primary">
+            🛡️ 打开管理面板
+        </a>
+        <button class="adg-btn adg-btn-outline" onclick="refreshStatus()">
+            🔄 刷新状态
+        </button>
+    </div>
 </div>
+
+<script>
+(function() {
+    var host = window.location.hostname;
+    document.getElementById('adg-dashboard-btn').href = 'http://' + host + ':3000';
+    refreshStatus();
+})();
+
+function refreshStatus() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '<%=luci.dispatcher.build_url("admin/services/adguardhome/status")%>', true);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            var data = JSON.parse(xhr.responseText);
+            updateUI(data);
+        }
+    };
+    xhr.send();
+}
+
+function updateUI(data) {
+    var badge = document.getElementById('adg-running-badge');
+    var toggle = document.getElementById('adg-toggle');
+    var autostart = document.getElementById('adg-autostart');
+
+    if (data.running) {
+        badge.className = 'adg-status-badge running';
+        badge.textContent = '● 运行中';
+        toggle.className = 'adg-switch on';
+    } else {
+        badge.className = 'adg-status-badge stopped';
+        badge.textContent = '○ 已停止';
+        toggle.className = 'adg-switch';
+    }
+
+    if (data.enabled) {
+        autostart.className = 'adg-switch on';
+    } else {
+        autostart.className = 'adg-switch';
+    }
+}
+
+function toggleService() {
+    var toggle = document.getElementById('adg-toggle');
+    var isOn = toggle.classList.contains('on');
+    toggle.classList.add('loading');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<%=luci.dispatcher.build_url("admin/services/adguardhome/toggle")%>', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+        setTimeout(refreshStatus, 2000);
+    };
+    xhr.send('action=' + (isOn ? 'stop' : 'start') + '&token=<%=token%>');
+}
+
+function toggleAutostart() {
+    var autostart = document.getElementById('adg-autostart');
+    var isOn = autostart.classList.contains('on');
+    autostart.classList.add('loading');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<%=luci.dispatcher.build_url("admin/services/adguardhome/toggle")%>', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+        setTimeout(refreshStatus, 1000);
+    };
+    xhr.send('action=' + (isOn ? 'disable' : 'enable') + '&token=<%=token%>');
+}
+</script>
 <%+footer%>

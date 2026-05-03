@@ -138,10 +138,8 @@ schema_version: 28
 ADGEOF
 fi
 
-# 添加开机自启到 rc.local
-if ! grep -q "AdGuardHome" /etc/rc.local; then
-    sed -i "/exit 0/i nohup /usr/bin/AdGuardHome --no-check-update -w /etc/AdGuardHome > /dev/null 2>&1 &" /etc/rc.local
-fi
+# 启用 AdGuard Home 服务（使用标准 init.d 管理）
+/etc/init.d/adguardhome enable
 
 # ---- 首次启动自动安装 Tailscale（源码编译有 Go 兼容问题，改用 opkg 在线安装） ----
 cat > /etc/uci-defaults/98-install-tailscale << 'TSEOF'
