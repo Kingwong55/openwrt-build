@@ -5,9 +5,6 @@
 name: Build ImmortalWrt Firmware
 
 on:
-  push:
-    branches:
-      - main
   repository_dispatch:
   workflow_dispatch:
     inputs:
