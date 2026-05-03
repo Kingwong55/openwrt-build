@@ -1,88 +1,5 @@
 <%+header%>
 <style>
-.adg-container {
-    max-width: 100%;
-}
-.adg-card {
-    background: var(--main-bg-color, #fff);
-    border-radius: var(--border-radius, 8px);
-    box-shadow: var(--main-shadow, 0 1px 4px rgba(0,0,0,.1));
-    margin-bottom: 20px;
-    overflow: hidden;
-}
-.adg-card-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 20px 24px;
-    background: linear-gradient(135deg, #5e72e4, #825ee4);
-    color: #fff;
-}
-.adg-card-header svg {
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-}
-.adg-card-header-text h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
-}
-.adg-card-header-text span {
-    font-size: 13px;
-    opacity: 0.85;
-}
-.adg-card-body {
-    padding: 0;
-}
-.adg-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border-color-light, #f0f0f0);
-    transition: background 0.15s;
-}
-.adg-row:last-child {
-    border-bottom: none;
-}
-.adg-row:hover {
-    background: var(--hover-bg, rgba(94,114,228,0.04));
-}
-.adg-row-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--main-text-color, #333);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.adg-row-label .adg-icon {
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
-}
-.adg-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-}
-.adg-badge-ok {
-    background: rgba(45,206,137,0.12);
-    color: #2dce89;
-}
-.adg-badge-err {
-    background: rgba(245,54,92,0.12);
-    color: #f5365c;
-}
-
-/* Argon-style toggle */
 .adg-toggle {
     position: relative;
     width: 44px;
@@ -93,105 +10,63 @@
     transition: background 0.25s;
     flex-shrink: 0;
 }
-.adg-toggle.active {
-    background: #5e72e4;
-}
+.adg-toggle.active { background: #5e72e4; }
 .adg-toggle::after {
     content: '';
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
     border-radius: 50%;
     background: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     transition: transform 0.25s;
 }
-.adg-toggle.active::after {
-    transform: translateX(20px);
-}
-.adg-toggle.busy {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-/* Action buttons */
-.adg-actions {
-    padding: 16px 24px;
-    display: flex;
-    gap: 10px;
-}
-.adg-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 20px;
-    border-radius: var(--border-radius, 6px);
-    font-size: 13px;
+.adg-toggle.active::after { transform: translateX(20px); }
+.adg-toggle.busy { opacity: 0.5; pointer-events: none; }
+.adg-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
     font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
-    transition: box-shadow 0.2s, transform 0.15s;
-    white-space: nowrap;
 }
-.adg-btn:active {
-    transform: scale(0.97);
-}
-.adg-btn-primary {
-    background: linear-gradient(135deg, #5e72e4, #825ee4);
-    color: #fff;
-    box-shadow: 0 2px 6px rgba(94,114,228,0.35);
-}
-.adg-btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(94,114,228,0.5);
-    color: #fff;
-    text-decoration: none;
-}
-.adg-btn-secondary {
-    background: var(--main-bg-color, #fff);
-    color: #5e72e4;
-    border: 1px solid #5e72e4;
-}
-.adg-btn-secondary:hover {
-    background: rgba(94,114,228,0.06);
-    text-decoration: none;
-    color: #5e72e4;
-}
+.adg-badge-ok { background: rgba(45,206,137,0.12); color: #2dce89; }
+.adg-badge-err { background: rgba(245,54,92,0.12); color: #f5365c; }
 </style>
 
-<div class="adg-container">
-    <div class="adg-card">
-        <div class="adg-card-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            <div class="adg-card-header-text">
-                <h3>AdGuard Home</h3>
-                <span>DNS 广告过滤 & 安全防护</span>
-            </div>
+<div class="cbi-map">
+    <h2>AdGuard Home</h2>
+    <div class="cbi-map-descr">DNS 广告过滤 & 安全防护</div>
+
+    <fieldset class="cbi-section">
+        <table class="cbi-section-table" style="width:100%">
+            <tr class="cbi-section-table-row">
+                <td style="width:160px;padding:12px 16px;font-weight:500">运行状态</td>
+                <td style="padding:12px 16px;text-align:right">
+                    <span id="adg-status" class="adg-badge adg-badge-err">检测中…</span>
+                </td>
+            </tr>
+            <tr class="cbi-section-table-row">
+                <td style="padding:12px 16px;font-weight:500">服务开关</td>
+                <td style="padding:12px 16px;text-align:right">
+                    <div id="adg-svc" class="adg-toggle busy" onclick="doToggle('service')" style="display:inline-block"></div>
+                </td>
+            </tr>
+            <tr class="cbi-section-table-row">
+                <td style="padding:12px 16px;font-weight:500">开机自启</td>
+                <td style="padding:12px 16px;text-align:right">
+                    <div id="adg-boot" class="adg-toggle busy" onclick="doToggle('boot')" style="display:inline-block"></div>
+                </td>
+            </tr>
+        </table>
+    </fieldset>
+
+    <fieldset class="cbi-section">
+        <div style="padding:12px 16px;display:flex;gap:10px">
+            <a id="adg-link" href="#" target="_blank" class="btn cbi-button cbi-button-apply">打开管理面板</a>
+            <button class="btn cbi-button cbi-button-action" onclick="poll()">刷新状态</button>
         </div>
-        <div class="adg-card-body">
-            <div class="adg-row">
-                <span class="adg-row-label"><span class="adg-icon">●</span> 运行状态</span>
-                <span id="adg-status" class="adg-badge adg-badge-err">检测中…</span>
-            </div>
-            <div class="adg-row">
-                <span class="adg-row-label"><span class="adg-icon">⏻</span> 服务开关</span>
-                <div id="adg-svc" class="adg-toggle busy" onclick="doToggle('service')"></div>
-            </div>
-            <div class="adg-row">
-                <span class="adg-row-label"><span class="adg-icon">↻</span> 开机自启</span>
-                <div id="adg-boot" class="adg-toggle busy" onclick="doToggle('boot')"></div>
-            </div>
-            <div class="adg-actions">
-                <a id="adg-link" href="#" target="_blank" class="adg-btn adg-btn-primary">打开管理面板</a>
-                <button class="adg-btn adg-btn-secondary" onclick="poll()">刷新状态</button>
-            </div>
-        </div>
-    </div>
+    </fieldset>
 </div>
 
 <script>
