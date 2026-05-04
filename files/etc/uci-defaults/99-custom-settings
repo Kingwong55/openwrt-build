@@ -1,0 +1,184 @@
+#!/bin/sh
+# ============================================
+# OpenWrt 首次启动自动配置脚本
+# 此脚本在固件首次启动时自动执行
+# ============================================
+
+# ---- 基础网络配置（旁路由模式） ----
+
+# 设置 LAN IP
+uci set network.lan.ipaddr='10.10.1.2'
+uci set network.lan.netmask='255.255.255.0'
+uci set network.lan.gateway='10.10.1.1'
+uci set network.lan.dns='223.5.5.5'
+uci set network.lan.proto='static'
+
+# 关闭 DHCP（由主路由负责）
+uci set dhcp.lan.ignore='1'
+
+# 关闭 IPv6 DHCP（旁路由不需要）
+uci set dhcp.lan.dhcpv6='disabled'
+uci set dhcp.lan.ra='disabled'
+
+uci commit network
+uci commit dhcp
+
+# ---- 防火墙配置 ----
+
+# 设置宽松的防火墙策略（旁路由）
+uci set firewall.@zone[0].input='ACCEPT'
+uci set firewall.@zone[0].output='ACCEPT'
+uci set firewall.@zone[0].forward='ACCEPT'
+
+uci commit firewall
+
+# ---- 系统配置 ----
+
+# 设置主机名
+uci set system.@system[0].hostname='Kingwong55'
+uci set system.@system[0].timezone='CST-8'
+uci set system.@system[0].zonename='Asia/Shanghai'
+
+uci commit system
+
+# ---- 设置默认主题为 Argon ----
+uci set luci.main.mediaurlbase='/luci-static/argon' 2>/dev/null
+
+uci commit luci 2>/dev/null
+
+# ---- 根目录直接跳转 LuCI ----
+uci set uhttpd.main.index_page='cgi-bin/luci/'
+uci commit uhttpd
+
+# ---- 隐藏底部版本信息 ----
+mkdir -p /www/luci-static/argon/css
+cat >> /www/luci-static/argon/css/cascade.css << 'CSSEOF'
+footer { display: none !important; }
+CSSEOF
+
+# ---- 开机自启 Tailscale ----
+/etc/init.d/tailscale enable 2>/dev/null
+
+# ---- ttyd 直接进入 Shell ----
+uci set ttyd.@ttyd[0].command='/bin/sh'
+uci commit ttyd
+
+# ---- 禁用 dnsmasq（旁路由不需要，避免端口冲突） ----
+/etc/init.d/dnsmasq stop 2>/dev/null
+/etc/init.d/dnsmasq disable 2>/dev/null
+
+# ---- AdGuard Home 初始化（终极串联：监听 53，上游指 OpenClash 7874） ----
+mkdir -p /etc/AdGuardHome
+if [ ! -f /etc/AdGuardHome/AdGuardHome.yaml ]; then
+cat > /etc/AdGuardHome/AdGuardHome.yaml << 'ADGEOF'
+http:
+  pprof:
+    port: 6060
+    enabled: false
+  address: 0.0.0.0:3000
+  session_ttl: 720h
+users: []
+dns:
+  bind_hosts:
+    - 0.0.0.0
+  port: 53
+  upstream_dns:
+    - 127.0.0.1:7874
+  bootstrap_dns:
+    - 223.5.5.5
+    - 119.29.29.29
+  protection_enabled: true
+  blocking_mode: default
+  cache_size: 4194304
+  cache_ttl_min: 300
+filters:
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+    name: AdGuard DNS filter
+    id: 1
+  - enabled: true
+    url: https://anti-ad.net/easylist.txt
+    name: anti-ad
+    id: 1777743596
+  - enabled: true
+    url: https://gcore.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblockdns.txt
+    name: 217heidai 广告规则
+    id: 1777743597
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_21.txt
+    name: 'CHN: anti-AD'
+    id: 1777754308
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_43.txt
+    name: 'ISR: EasyList Hebrew'
+    id: 1777754309
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_18.txt
+    name: Phishing Army
+    id: 1777754310
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_8.txt
+    name: NoCoin Filter List
+    id: 1777754311
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_10.txt
+    name: Scam Blocklist by DurableNapkin
+    id: 1777754312
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_29.txt
+    name: 'CHN: AdRules DNS List'
+    id: 1777754313
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_30.txt
+    name: Phishing URL Blocklist (PhishTank and OpenPhish)
+    id: 1777754314
+whitelist_filters: []
+user_rules: []
+schema_version: 28
+ADGEOF
+fi
+
+# 启用 AdGuard Home 服务（使用标准 init.d 管理）
+/etc/init.d/adguardhome enable
+
+# ---- 首次启动自动安装 Tailscale（源码编译有 Go 兼容问题，改用 opkg 在线安装） ----
+cat > /etc/uci-defaults/98-install-tailscale << 'TSEOF'
+#!/bin/sh
+# 等待网络就绪后自动安装 Tailscale
+MAX_RETRY=30
+for i in $(seq 1 $MAX_RETRY); do
+    ping -c 1 -W 3 mirrors.vsean.net >/dev/null 2>&1 && break
+    sleep 5
+done
+
+opkg update 2>/dev/null
+opkg install tailscale 2>/dev/null
+
+# 安装 Tailscale LuCI 管理界面（从 GitHub 下载预编译 ipk）
+cd /tmp
+wget -q https://github.com/asvow/luci-app-tailscale/releases/download/v1.2.6/luci-app-tailscale_1.2.6_all.ipk 2>/dev/null
+wget -q https://github.com/asvow/luci-app-tailscale/releases/download/v1.2.6/luci-i18n-tailscale-zh-cn_250509.33792_all.ipk 2>/dev/null
+opkg install --force-overwrite /tmp/luci-app-tailscale_1.2.6_all.ipk 2>/dev/null
+opkg install --force-overwrite --force-depends /tmp/luci-i18n-tailscale-zh-cn_250509.33792_all.ipk 2>/dev/null
+rm -f /tmp/luci-app-tailscale*.ipk /tmp/luci-i18n-tailscale*.ipk
+
+# 启用 Tailscale 服务
+/etc/init.d/tailscale enable 2>/dev/null
+/etc/init.d/tailscale start 2>/dev/null
+
+# 清理 LuCI 缓存使菜单生效
+rm -rf /tmp/luci-*cache*
+
+echo "✅ Tailscale + LuCI 界面自动安装完成"
+TSEOF
+chmod +x /etc/uci-defaults/98-install-tailscale
+
+echo "✅ 旁路由初始配置完成！"
+echo "   LAN IP:  10.10.1.2"
+echo "   网关:    10.10.1.1"
+echo "   DNS:     设备 → AdGuard Home(53) → OpenClash(7874)"
+echo "   DHCP:    已关闭"
+echo "   dnsmasq: 已禁用"
+echo "   Tailscale: 首次开机后自动安装"
+
+exit 0

@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+# AdGuard Home 服务管理脚本
+
+START=99
+STOP=10
+USE_PROCD=1
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /usr/bin/AdGuardHome --no-check-update -w /etc/AdGuardHome
+    procd_set_param stdout 0
+    procd_set_param stderr 0
+    procd_set_param respawn
+    procd_close_instance
+}

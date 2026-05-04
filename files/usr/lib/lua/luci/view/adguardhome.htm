@@ -1,0 +1,114 @@
+<%+header%>
+<style>
+.adg-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background: #d1d5db;
+    cursor: pointer;
+    transition: background 0.25s;
+    flex-shrink: 0;
+}
+.adg-toggle.active { background: #5e72e4; }
+.adg-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.25s;
+}
+.adg-toggle.active::after { transform: translateX(20px); }
+.adg-toggle.busy { opacity: 0.5; pointer-events: none; }
+.adg-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.adg-badge-ok { background: rgba(45,206,137,0.12); color: #2dce89; }
+.adg-badge-err { background: rgba(245,54,92,0.12); color: #f5365c; }
+</style>
+
+<div class="cbi-map">
+    <h2>AdGuard Home</h2>
+    <div class="cbi-map-descr">DNS 广告过滤 & 安全防护</div>
+
+    <fieldset class="cbi-section">
+        <table class="cbi-section-table" style="width:100%">
+            <tr class="cbi-section-table-row">
+                <td style="width:160px;padding:12px 16px;font-weight:500">运行状态</td>
+                <td style="padding:12px 16px;text-align:right">
+                    <span id="adg-status" class="adg-badge adg-badge-err">检测中…</span>
+                </td>
+            </tr>
+            <tr class="cbi-section-table-row">
+                <td style="padding:12px 16px;font-weight:500">服务开关</td>
+                <td style="padding:12px 16px;text-align:right">
+                    <div id="adg-svc" class="adg-toggle busy" onclick="doToggle('service')" style="display:inline-block"></div>
+                </td>
+            </tr>
+            <tr class="cbi-section-table-row">
+                <td style="padding:12px 16px;font-weight:500">开机自启</td>
+                <td style="padding:12px 16px;text-align:right">
+                    <div id="adg-boot" class="adg-toggle busy" onclick="doToggle('boot')" style="display:inline-block"></div>
+                </td>
+            </tr>
+        </table>
+    </fieldset>
+
+    <fieldset class="cbi-section">
+        <div style="padding:12px 16px;display:flex;gap:10px">
+            <a id="adg-link" href="#" target="_blank" class="btn cbi-button cbi-button-apply">打开管理面板</a>
+            <button class="btn cbi-button cbi-button-action" onclick="poll()">刷新状态</button>
+        </div>
+    </fieldset>
+</div>
+
+<script>
+(function(){
+    document.getElementById('adg-link').href = 'http://' + location.hostname + ':3000';
+    poll();
+})();
+
+function poll() {
+    var x = new XMLHttpRequest();
+    x.open('GET', '<%=luci.dispatcher.build_url("admin/services/adguardhome/status")%>');
+    x.onload = function() {
+        if (x.status === 200) render(JSON.parse(x.responseText));
+    };
+    x.send();
+}
+
+function render(d) {
+    var s = document.getElementById('adg-status');
+    var svc = document.getElementById('adg-svc');
+    var boot = document.getElementById('adg-boot');
+    s.textContent = d.running ? '● 运行中' : '○ 已停止';
+    s.className = 'adg-badge ' + (d.running ? 'adg-badge-ok' : 'adg-badge-err');
+    svc.className = 'adg-toggle' + (d.running ? ' active' : '');
+    boot.className = 'adg-toggle' + (d.enabled ? ' active' : '');
+}
+
+function doToggle(type) {
+    var el, action;
+    if (type === 'service') {
+        el = document.getElementById('adg-svc');
+        action = el.classList.contains('active') ? 'stop' : 'start';
+    } else {
+        el = document.getElementById('adg-boot');
+        action = el.classList.contains('active') ? 'disable' : 'enable';
+    }
+    el.classList.add('busy');
+    var x = new XMLHttpRequest();
+    x.open('POST', '<%=luci.dispatcher.build_url("admin/services/adguardhome/toggle")%>');
+    x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    x.onload = function() { setTimeout(poll, type === 'service' ? 2000 : 800); };
+    x.send('action=' + action + '&token=<%=token%>');
+}
+</script>
+<%+footer%>
